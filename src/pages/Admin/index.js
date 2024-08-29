@@ -2,17 +2,38 @@ import { useEffect, useState } from "react"
 import "./admin.css"
 import { signOut } from "firebase/auth";
 import { auth, db } from "../../firebaseConnection";
-import { addDoc, collection } from "firebase/firestore";
+import { addDoc, collection, onSnapshot, orderBy, query, where } from "firebase/firestore";
 
 
 export default function Admin() {
   const [tarefa, setTarefa] = useState('')
   const [ user, setUser]  = useState({})
+  const [tarefas, setTarefas] = useState([])
 
   useEffect(() => {
     async function loadTarefas() {
       const userDetail = localStorage.getItem("@detailUser")
       setUser(JSON.parse(userDetail))
+
+      if(userDetail) {
+        const data = JSON.parse(userDetail);
+
+        const tarefaRef = collection(db, "tarefas")
+        const q = query(tarefaRef, orderBy("created", "desc"), where("userUid", "==", data?.uid))
+        const unsub = onSnapshot(q, (snapShot) => {
+          let lista = [];
+
+          snapShot.forEach((doc) => {
+            lista.push({
+              id: doc.id,
+              tarefa: doc.data().tarefa,
+              userUid: doc.data().userUid,
+            })
+          })
+
+          setTarefas(lista);
+        })
+      }
     }
     loadTarefas()
   })
