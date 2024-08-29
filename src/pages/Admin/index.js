@@ -1,14 +1,41 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import "./admin.css"
 import { signOut } from "firebase/auth";
-import { auth } from "../../firebaseConnection";
+import { auth, db } from "../../firebaseConnection";
+import { addDoc, collection } from "firebase/firestore";
 
 
 export default function Admin() {
   const [tarefa, setTarefa] = useState('')
+  const [ user, setUser]  = useState({})
 
-  function handleRegister(e){
+  useEffect(() => {
+    async function loadTarefas() {
+      const userDetail = localStorage.getItem("@detailUser")
+      setUser(JSON.parse(userDetail))
+    }
+    loadTarefas()
+  })
+
+  async function handleRegister(e){
     e.preventDefault();
+
+    if(tarefa === ""){
+      alert("Digite sua tarefa...")
+      return
+    }
+
+    await addDoc(collection(db, "tarefas"), {
+      tarefa: tarefa,
+      created: new Date(),
+      userUid: user?.uid
+    })
+    .then(() => {
+      setTarefa('')
+    })
+    .catch((erro) => {
+      console.log("Erro ao registrar")
+    })
   }
 
   async function handleLogout(){
